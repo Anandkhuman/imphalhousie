@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarManipur Housie</title>
+    <title>Imphal Housie</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -734,7 +734,7 @@
         <header class="main-header">
             <div class="title-container">
                 <div class="logo-container"><i class="fas fa-ticket-alt"></i></div>
-                <h1 class="webTitle">StarManipur Housie</h1>
+                <h1 class="webTitle">Imphal Housie</h1>
             </div>
             <div class="icon-bar" id="public-icon-bar">
                 <a href="#" id="whatsappGroupLink" target="_blank" class="icon-btn"><i class="fab fa-whatsapp"></i><span>Join Group</span></a>
@@ -794,7 +794,7 @@
         <header class="main-header">
              <div class="title-container">
                 <div class="logo-container"><i class="fas fa-ticket-alt"></i></div>
-                <h1 class="webTitle">StarManipur Housie</h1>
+                <h1 class="webTitle">Imphal Housie</h1>
             </div>
              <div class="icon-bar" id="booking-icon-bar">
                 <a href="#game" id="navigateToGame" class="icon-btn"><i class="fas fa-gamepad"></i><span>Game Board</span></a>
@@ -1140,8 +1140,8 @@
             <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg13.jpg')">BG 13</button>
             <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg14.jpg')">BG 14</button>
             <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg15.jpg')">BG 15</button>
-            <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg116.jpg')">BG 16</button>
-            <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg117.jpg')">BG 17</button>
+            <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg16.jpg')">BG 16</button>
+            <button class="actionBtn" style="padding: 4px 8px; font-size: 0.8em; flex-grow: 0;" onclick="changePosterBackground('https://raw.githubusercontent.com/Anandkhuman/housie/main/bg17.jpg')">BG 17</button>
         </div>
 
         <div id="posterContent">
@@ -1411,7 +1411,7 @@ async function handleForgotPassword(e) {
 
 function bindEventListeners() {
     document.querySelectorAll('.x-button').forEach(btn => btn.addEventListener('click', closePopups));
-    //document.getElementById('showSignupFormBtn').addEventListener('click', showSignupForm);
+    document.getElementById('showSignupFormBtn').addEventListener('click', showSignupForm);
     document.getElementById('showLoginFormBtn').addEventListener('click', showLoginForm);
     document.getElementById('adminLoginBtn').addEventListener('click', () => loginUser('admin'));
     document.getElementById('agentLoginBtn').addEventListener('click', () => loginUser('agent'));
