@@ -708,7 +708,7 @@
         margin: 0 !important;
         height: auto; /* Let padding define height */
         font-size: 1rem;
-	border-radius: 10px
+	border-radius: 10px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -721,6 +721,20 @@
         transform: translateY(-2px);
         filter: brightness(1.1);
         box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    
+    /* NEW: Styles for editable poster content */
+    [contenteditable="true"] {
+        cursor: text;
+        transition: outline 0.2s, background-color 0.2s;
+    }
+    [contenteditable="true"]:hover {
+        outline: 1px dashed rgba(255, 255, 255, 0.6);
+    }
+    [contenteditable="true"]:focus {
+        outline: 2px solid var(--accent-primary);
+        background-color: rgba(0, 246, 255, 0.1);
+        box-shadow: 0 0 8px var(--accent-primary);
     }
 </style>
 </head>
@@ -917,18 +931,14 @@
         <button class="runBtn" id="earningBtn">₹ 0</button>
     </div>
     <div class="gameSettingDiv">
-        <div class="titleBtn">BUSINESS INFO</div>
+        <div class="titleBtn">GAME INFO</div>
         <table class="gameSettingTable" id="agentBusinessInfoTable">
         </table>
     </div>
     <div class="gameSettingDiv">
-        <div class="titleBtn">AGENT INFO</div>
-        <table class="gameSettingTable">
-            <tbody>
-                <tr><td>Agent name</td><td><input class="tableInp" id="agentNameInp" readonly></td></tr>
-                <tr><td>Agent phone</td><td><input class="tableInp" id="agentPhoneInp" readonly></td></tr>
-                <tr><td colspan="2"><button class="actionBtn" style="width:100%;" onclick="logout()">LOG OUT</button></td></tr>
-             </tbody>
+        <div class="titleBtn">MY INFO & PERFORMANCE</div>
+        <table class="gameSettingTable" id="agentInfoTable">
+             <!-- Populated by JS -->
         </table>
     </div>
     <div class="gameSettingDiv" style="margin-bottom: 80px;">
@@ -1213,9 +1223,7 @@ let gameSettingsData = {};
 let publicSelectedTickets = []; 
 let publicPopupSelectedTickets = []; 
 let adminListState = 'tickets';
-// --- MODIFICATION START: Add a variable to track the last notification ---
 let lastNotification = { message: '', type: '', timestamp: 0 };
-// --- MODIFICATION END ---
 
 const allPossibleDividends = [
     "First Full House", "Second Full House", "Third Full House" , "Full Sheet Bonus", "Half Sheet Bonus", "Top Line", "Middle Line", "Bottom Line",
@@ -1252,24 +1260,18 @@ window.addEventListener('hashchange', handleRouting);
 
 function showNotification(message, type = 'info', duration = 4000) {
     const now = Date.now();
-    // Cooldown period in milliseconds (e.g., 5 seconds)
-    // to prevent the same notification from appearing again too quickly.
     const cooldown = 5000;
 
-    // Check if the incoming notification is identical to the last one
-    // and if it's within the cooldown period.
     if (
         message === lastNotification.message &&
         type === lastNotification.type &&
         (now - lastNotification.timestamp) < cooldown
     ) {
-        return; // If so, exit the function and don't show it.
+        return; 
     }
 
     const container = document.getElementById('notification-container');
 
-    // This second check prevents creating duplicate HTML elements if the function
-    // is called multiple times before the `lastNotification` variable is updated.
     const existingNotifs = container.querySelectorAll('.notification');
     for (const notif of existingNotifs) {
         if (notif.textContent === message && notif.classList.contains(type)) {
@@ -1285,12 +1287,10 @@ function showNotification(message, type = 'info', duration = 4000) {
 
     container.appendChild(notification);
 
-    // Animate the notification into view
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
 
-    // Set a timer to remove the notification
     setTimeout(() => {
         notification.classList.remove('show');
         notification.addEventListener('transitionend', () => notification.remove());
@@ -1411,7 +1411,7 @@ async function handleForgotPassword(e) {
 
 function bindEventListeners() {
     document.querySelectorAll('.x-button').forEach(btn => btn.addEventListener('click', closePopups));
-    document.getElementById('showSignupFormBtn').addEventListener('click', showSignupForm);
+    //document.getElementById('showSignupFormBtn').addEventListener('click', showSignupForm);
     document.getElementById('showLoginFormBtn').addEventListener('click', showLoginForm);
     document.getElementById('adminLoginBtn').addEventListener('click', () => loginUser('admin'));
     document.getElementById('agentLoginBtn').addEventListener('click', () => loginUser('agent'));
@@ -1565,8 +1565,14 @@ function updateTicketRelatedUIs() {
     renderVisualTicketBookingPage();
     renderSheetWiseBookedList();
     if (document.getElementById('ticketDisplayArea').innerHTML) searchTicketPublic();
-    if (currentUserRole === 'admin') updateAdminList();
-    if (currentUserRole === 'agent') showAgentSoldTickets();
+    if (currentUserRole === 'admin') {
+        updateBusinessInfo();
+        updateAdminList();
+    }
+    if (currentUserRole === 'agent') {
+        updateAgentInfoUI();
+        showAgentSoldTickets();
+    }
     updateDashboardBookingPopup();
     if (document.getElementById('publicBookingPopup').classList.contains('active')) {
         renderPublicBookingGrid(); 
@@ -1714,7 +1720,6 @@ function renderVisualTicketBookingPage() {
 
     if (currentView === 'ticketBookingView') {
         publicSelectedTickets = [];
-        updatePublicSelectionIndicator();
     }
 
     const totalTickets = gameSettingsData.totalTickets || 0;
@@ -1800,15 +1805,6 @@ function togglePublicTicketSelection(ticketId) {
         publicSelectedTickets.push(ticketId);
         ticketView.classList.add('selected');
     }
-    updatePublicSelectionIndicator();
-}
-
-function updatePublicSelectionIndicator() {
-    const indicator = document.getElementById('publicSelectionIndicator');
-    if (!indicator) return;
-    const result = checkSheetSelection(publicSelectedTickets);
-    indicator.textContent = result.message;
-    indicator.style.borderColor = result.valid ? 'var(--accent-primary)' : 'var(--accent-secondary)';
 }
 
 function handlePublicBookingRequest() {
@@ -2471,8 +2467,8 @@ function updateBusinessInfo() {
     const soldCount = soldTickets.length;
     const price = gameSettingsData.ticketPrice || 0;
     const commission = gameSettingsData.agentCommission || 0;
-    
-    // A ticket has a commission if it was sold by a user with the 'agent' role.
+    const totalTickets = gameSettingsData.totalTickets || 0;
+
     const agentUids = new Set(allUsersData.filter(u => u.role === 'agent').map(u => u.uid));
     const agentSoldCount = soldTickets.filter(t => t.agent_uid && agentUids.has(t.agent_uid)).length;
     const totalCommission = agentSoldCount * commission;
@@ -2485,8 +2481,9 @@ function updateBusinessInfo() {
     const adminTable = document.getElementById('businessInfoTable');
     if(adminTable && currentView === 'adminDashboardView') {
         adminTable.innerHTML = `<tbody>
-            <tr><td>Total Tickets</td><td>${gameSettingsData.totalTickets || 0}</td></tr>
+            <tr><td>Total Tickets</td><td>${totalTickets}</td></tr>
             <tr><td>Tickets Sold</td><td>${soldCount}</td></tr>
+            <tr><td>Tickets Left</td><td>${totalTickets - soldCount}</td></tr>
             <tr><td>Total Revenue</td><td>₹ ${totalRevenue.toLocaleString()}</td></tr>
             <tr><td>Total Agent Commission</td><td>₹ ${totalCommission.toLocaleString()}</td></tr>
             <tr><td>Total Prize Money</td><td>₹ ${totalPrizeMoney.toLocaleString()}</td></tr>
@@ -2750,16 +2747,16 @@ function showPosterModal() {
         gameTimeFormatted = date.toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    const dividendNamesHTML = activeDividends.map(d => `<p>${d.name}</p>`).join('');
-    const dividendAmountsHTML = activeDividends.map(d => `<p>Rs ${d.amount.toLocaleString()}</p>`).join('');
+    const dividendNamesHTML = activeDividends.map(d => `<p contenteditable="true">${d.name}</p>`).join('');
+    const dividendAmountsHTML = activeDividends.map(d => `<p contenteditable="true">Rs ${d.amount.toLocaleString()}</p>`).join('');
 
     const posterHTML = `
-        <h1 class="poster-title">${title}</h1>
-        <p class="poster-datetime">${gameTimeFormatted}</p>
-        <p class="poster-tagline">Grab Your Tickets & Get Ready to Win!</p>
+        <h1 class="poster-title" contenteditable="true">${title}</h1>
+        <p class="poster-datetime" contenteditable="true">${gameTimeFormatted}</p>
+        <p class="poster-tagline" contenteditable="true">Grab Your Tickets & Get Ready to Win!</p>
 
         <div class="prize-section">
-            <h3>PRIZES</h3>
+            <h3 contenteditable="true">PRIZES</h3>
             <div class="prize-list">
                 <div class="prize-column" id="prize-names">
                     ${dividendNamesHTML}
@@ -2770,11 +2767,11 @@ function showPosterModal() {
             </div>
         </div>
 
-        <p class="ticket-details">Get ticket @ Rs ${ticketPrice}. Total tickets only (${totalTickets})</p>
+        <p class="ticket-details" contenteditable="true">Get ticket @ Rs ${ticketPrice}. Total tickets only (${totalTickets})</p>
 
         <div class="contact-section">
-            <p>visit: <a href="${websiteLink}" target="_blank">${websiteLink.replace(/^https?:\/\//, '')}</a></p>
-            <p>Whatsapp: <span>${adminPhone}</span></p>
+            <p contenteditable="true">visit: <a href="${websiteLink}" target="_blank">${websiteLink.replace(/^https?:\/\//, '')}</a></p>
+            <p contenteditable="true">Whatsapp: <span>${adminPhone}</span></p>
         </div>
     `;
 
@@ -2842,7 +2839,6 @@ async function sharePoster() {
         if (error.name !== 'AbortError') {
              console.error('Error sharing poster:', error);
              showNotification(`Could not share poster: ${error.message}`, 'error');
-             // As a fallback on share error, we can also offer to save
              savePosterAsImage();
         }
     }
@@ -2851,18 +2847,31 @@ async function sharePoster() {
 function updateAgentInfoUI() {
     if (!currentUser || currentView !== 'agentDashboardView') return;
     const agentData = allUsersData.find(u => u.uid === currentUser.uid);
-    if (agentData) {
-        document.getElementById('agentNameInp').value = agentData.name;
-        document.getElementById('agentPhoneInp').value = agentData.phone;
-    }
+    
     const mySoldTickets = allTicketsData.filter(t => t.agent_uid === currentUser.uid);
     const myEarnings = mySoldTickets.length * (gameSettingsData.agentCommission || 0);
     document.getElementById('earningBtn').textContent = `₹ ${myEarnings.toLocaleString()}`;
 
+    const totalSoldCount = allTicketsData.filter(t => t.is_sold).length;
+    const totalTickets = gameSettingsData.totalTickets || 0;
+    const leftTickets = totalTickets - totalSoldCount;
+
     document.getElementById('agentBusinessInfoTable').innerHTML = `<tbody>
-        <tr><td>Game Title</td><td>StarManipur Housie</td></tr>
-        <tr><td>Ticket Price</td><td>₹ ${(gameSettingsData.ticketPrice || 0).toLocaleString()}</td></tr>
-        <tr><td>My Commission/Tkt</td><td>₹ ${(gameSettingsData.agentCommission || 0).toLocaleString()}</td></tr>
+        <tr><td>Game Title</td><td>Imphal Housie</td></tr>
+        <tr><td>Total Tickets</td><td>${totalTickets}</td></tr>
+        <tr><td>Tickets Sold</td><td>${totalSoldCount}</td></tr>
+        <tr><td>Tickets Left</td><td>${leftTickets}</td></tr>
+    </tbody>`;
+
+    const agentName = agentData ? agentData.name : '...';
+    const agentPhone = agentData ? agentData.phone : '...';
+    
+    document.getElementById('agentInfoTable').innerHTML = `<tbody>
+        <tr><td>Agent Name</td><td>${agentName}</td></tr>
+        <tr><td>Agent Phone</td><td>${agentPhone}</td></tr>
+        <tr><td>My Tickets Sold</td><td>${mySoldTickets.length}</td></tr>
+        <tr><td>My Commission Rate</td><td>₹ ${(gameSettingsData.agentCommission || 0).toLocaleString()} / ticket</td></tr>
+        <tr><td colspan="2"><button class="actionBtn" style="width:100%;" onclick="logout()">LOG OUT</button></td></tr>
     </tbody>`;
 }
 
@@ -3430,13 +3439,7 @@ async function generateHousieTickets(bypassConfirm = false) {
     }
 }
 
-/**
- * Creates a complete, valid set of 6 Housie/Tambola tickets.
- * This is the corrected and robust version of the function.
- * @returns {Array<Array<Array<number>>>} A 6x3x9 array representing the sheet.
- */
 function createTambolaSetOf6() {
-    // Helper to shuffle an array
     const shuffle = (arr) => {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -3445,8 +3448,6 @@ function createTambolaSetOf6() {
         return arr;
     };
 
-    // 1. A pre-validated matrix that defines how many numbers each column of each ticket will hold.
-    // The sums are structured to ensure all 90 numbers are used across the 6 tickets.
     const colCounts = [
         [1, 2, 1, 2, 1, 2, 2, 2, 2],
         [1, 1, 2, 1, 2, 2, 2, 2, 2],
@@ -3456,22 +3457,16 @@ function createTambolaSetOf6() {
         [2, 2, 2, 2, 2, 2, 1, 1, 1]
     ];
 
-    // 2. Generate the layout (a grid of 0s and 1s) for all 6 tickets.
     const ticketLayouts = [];
     for (let t = 0; t < 6; t++) {
         const layout = Array(3).fill(0).map(() => Array(9).fill(0));
         const ticketColCounts = colCounts[t];
-
-        // Phase 1: Initial random placement based on column counts.
-        // This ensures columns are correct, but rows might be unbalanced.
         for (let c = 0; c < 9; c++) {
             const rowsToPlace = shuffle([0, 1, 2]).slice(0, ticketColCounts[c]);
             for (const r of rowsToPlace) {
                 layout[r][c] = 1;
             }
         }
-
-        // Phase 2: Balance the rows to ensure each has exactly 5 numbers.
         let isBalanced = false;
         while (!isBalanced) {
             const rowCounts = layout.map(row => row.reduce((a, b) => a + b, 0));
@@ -3482,18 +3477,14 @@ function createTambolaSetOf6() {
                 isBalanced = true;
                 continue;
             }
-
             const rOver = overfullRows[0];
             const rUnder = underfullRows[0];
-
-            // Find a column where we can swap a number from the overfull to the underfull row.
             const swappableCols = [];
             for (let c = 0; c < 9; c++) {
                 if (layout[rOver][c] === 1 && layout[rUnder][c] === 0) {
                     swappableCols.push(c);
                 }
             }
-
             if (swappableCols.length > 0) {
                 const colToSwap = swappableCols[Math.floor(Math.random() * swappableCols.length)];
                 layout[rOver][colToSwap] = 0;
@@ -3503,20 +3494,18 @@ function createTambolaSetOf6() {
         ticketLayouts.push(layout);
     }
 
-    // 3. Create and shuffle number pools for each decade.
     const numberPools = [
-        shuffle(Array.from({ length: 9 }, (_, i) => i + 1)),   // 1-9
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 10)), // 10-19
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 20)), // 20-29
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 30)), // 30-39
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 40)), // 40-49
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 50)), // 50-59
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 60)), // 60-69
-        shuffle(Array.from({ length: 10 }, (_, i) => i + 70)), // 70-79
-        shuffle(Array.from({ length: 11 }, (_, i) => i + 80))  // 80-90
+        shuffle(Array.from({ length: 9 }, (_, i) => i + 1)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 10)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 20)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 30)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 40)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 50)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 60)),
+        shuffle(Array.from({ length: 10 }, (_, i) => i + 70)),
+        shuffle(Array.from({ length: 11 }, (_, i) => i + 80))
     ];
 
-    // 4. Populate the final tickets by replacing placeholders (1s) with numbers from the pools.
     const finalTickets = Array(6).fill(0).map(() => Array(3).fill(0).map(() => Array(9).fill(0)));
     for (let c = 0; c < 9; c++) {
         for (let t = 0; t < 6; t++) {
@@ -3528,7 +3517,6 @@ function createTambolaSetOf6() {
         }
     }
 
-    // 5. Final Sort: Sort numbers within each column of each ticket for readability.
     for (let t = 0; t < 6; t++) {
         for (let c = 0; c < 9; c++) {
             const colValues = [];
@@ -3598,7 +3586,6 @@ async function downloadPreviousGameTicketList() {
         }
 
         const prevTickets = Object.values(prevTicketsObject);
-        // We also need user data to map agent IDs to names
         const usersSnapshot = await db.ref('users').once('value');
         const users = usersSnapshot.val();
         const userMap = new Map(Object.entries(users || {}).map(([uid, data]) => [uid, data]));
