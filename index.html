@@ -3583,20 +3583,20 @@ function setNextCallNumber() {
     const inputEl = document.getElementById('nextCallInp');
     const numberToSet = parseInt(inputEl.value, 10);
 
+    // Just return silently if invalid
     if (isNaN(numberToSet) || numberToSet < 1 || numberToSet > 90) {
-        showNotification('Please enter a valid number between 1 and 90.', 'error');
         return;
     }
 
+    // Just return silently if already called
     if (currentCalledNumbers.includes(numberToSet)) {
-        showNotification(`Number ${numberToSet} has already been called.`, 'error');
         return;
     }
     
     nextManualCallNumber = numberToSet;
-    
     inputEl.value = ''; 
 }
+
 
 function callNextNumber() {
     const gameStateRef = db.ref('gameState/currentState');
