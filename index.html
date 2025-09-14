@@ -3573,7 +3573,7 @@ async function toggleGameRunner() {
         } else {
             await gameStateRef.child('isGameRunning').set(false);
         }
-        showNotification(`Game runner is now ${isRunning ? 'ON' : 'OFF'}.`, 'info');
+        
     } catch (e) {
         showNotification("Error starting/stopping game: " + e.message, 'error');
     }
